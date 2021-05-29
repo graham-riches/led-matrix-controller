@@ -5,154 +5,120 @@ open Fabulous
 open Fabulous.XamarinForms
 open Fabulous.XamarinForms.LiveUpdate
 open Xamarin.Forms
+open IntervalTimer.Components
+open IntervalTimer.Helpers
+open Timers.Timers
+open DomainOutput.DomainOutput
 
 
 module MainPage = 
-    //!< TODO: move this
-    let rec zip xs ys = 
-        match xs with
-        | [] -> []
-        | headX :: tailX ->
-            match ys with
-            | [] -> []
-            | headY :: tailY -> (headX, headY) :: zip tailX tailY
-    
-    let hourSelector = zip ([0..23] |> List.map string) [0..23] 
-    let minuteSelector = zip ([0..59] |> List.map string) [0..59] 
-    let secondSelector = zip ([0..59] |> List.map string) [0..59] 
+    //!< local helper to use a picker items list for rep and set selections
+    let repSetSelector = zip ([0..100] |> List.map string) [0..100]
 
-    type Duration = 
-        { Hour: int
-          Minute: int
-          Second: int
-        }
-    
-    type DurationType = 
-        | Hours
-        | Minutes
-        | Seconds
-    
-    
-    type Timer =
-        { Reps: int
-          Sets: int
-          High: Duration
-          Low: Duration
-          Warmup: Duration
-          Cooldown: Duration
-        }
-
-    type DurationInterval = 
-        | HighInterval
-        | LowInterval
-        | WarmupInterval
-        | CooldownInterval
-
-    
-
+    //!< type to handle all main page events
     type Message = 
-        | PickerItemChanged of (DurationInterval*DurationType*string option)
+        | DurationSelectorChanged of (DurationInterval*DurationType*int)
+        | RepSelectorChanged of int
+        | SetSelectorChanged of int
+        | ButtonClicked
 
+    //!< main model object for the main page
     type Model = 
-        { Reps: int
-          Sets: int
-          High: Duration
-          Low: Duration
-          Warmup: Duration
-          Cooldown: Duration
-        }
-    
+        { Timer: Timer }        
 
+    //!< create the initial state of the model
     let init () = 
         let initialTime = {Hour = 0; Minute = 0; Second = 0}
-        let initialModel = 
-            { Reps = 0
-              Sets = 0
-              High = initialTime
-              Low = initialTime
-              Warmup = initialTime
-              Cooldown = initialTime
-            }
-        initialModel, Cmd.none
+        let initialModel = {            
+            Timer = {
+                Reps = 0
+                Sets = 0
+                High = initialTime
+                Low = initialTime
+                Warmup = initialTime
+                Cooldown = initialTime }} 
+        initialModel, Cmd.none    
 
-    let optToInt value = 
-        match value with
-        | Some i -> int i
-        | None -> 0
-
-    let updateTimerField original (field: DurationType) value = 
-        match field with
-        | Hours -> {original with Hour = optToInt value}
-        | Minutes -> {original with Minute = optToInt value}
-        | Seconds -> {original with Second = optToInt value}
-
+    //!< function to handle update events from UI
     let update message model = 
         match message with
-        | PickerItemChanged (interval, duration, value) ->
+        | DurationSelectorChanged (interval, duration, value) ->
             match interval with
-                | HighInterval -> {model with Model.High = updateTimerField model.High duration value}, message
-                | LowInterval-> {model with Model.Low = updateTimerField model.Low duration value}, message
-                | WarmupInterval-> {model with Model.Warmup = updateTimerField model.Warmup duration value}, message
-                | CooldownInterval-> {model with Model.Cooldown = updateTimerField model.Cooldown duration value}, message
+                | HighInterval -> {model with Timer = {model.Timer with Timer.High = updateTimerField model.Timer.High duration value}}
+                | LowInterval-> {model with Timer = {model.Timer with Timer.Low = updateTimerField model.Timer.Low duration value}}
+                | WarmupInterval-> {model with Timer = {model.Timer with Timer.Warmup = updateTimerField model.Timer.Warmup duration value}}
+                | CooldownInterval-> {model with Timer = {model.Timer with Timer.Cooldown = updateTimerField model.Timer.Cooldown duration value}}
+        | RepSelectorChanged value ->
+            {model with Timer = {model.Timer with Timer.Reps = value}}
+        | SetSelectorChanged value ->
+            {model with Timer = {model.Timer with Timer.Sets = value}}
+        | ButtonClicked ->
+            timerToJson model.Timer |> sendTcp            
+            model
 
-    let durationSelector (title: string) (intervalSelect: DurationInterval) dispatch =
-        View.Grid(
-            rowdefs = [Dimension.Auto],
-            coldefs = [Dimension.Absolute 150.0; Dimension.Absolute 200.0],
+    //!< creates a time selector of multiple dropdown menus to pick an interval time
+    let timeSelector dispatch message intervalSelect =         
+        let hourSelector = zip ([0..23] |> List.map (sprintf "%02i")) [0..23] 
+        let minuteSelector = zip ([0..59] |> List.map (sprintf "%02i")) [0..59] 
+        let secondSelector = zip ([0..59] |> List.map (sprintf "%02i")) [0..59]
+        View.StackLayout(
+            orientation = StackOrientation.Horizontal,
+            spacing = 10.0,
             children = [
-                View.Label(
-                    text = title,                                        
-                    horizontalOptions = LayoutOptions.Start,
+                View.Picker(
+                    title = "HH",
+                    items = List.map fst hourSelector,
+                    width=45.0,
                     verticalOptions = LayoutOptions.Center,
-                    padding=Thickness(10.0)
-                ).Row(0).Column(0)
-                View.StackLayout(
-                    orientation = StackOrientation.Horizontal,
-                    spacing = 10.0,
-                    children = [
-                        View.Picker(
-                            title = "HH",
-                            items = List.map fst hourSelector,
-                            width=45.0,
-                            verticalOptions = LayoutOptions.Center,
-                            selectedIndexChanged = (fun (i, item) -> dispatch (PickerItemChanged (intervalSelect, Hours, item)))
-                        )
-                        View.Label(
-                            text = ":", 
-                            verticalOptions = LayoutOptions.Center
-                        )
-                        View.Picker(
-                            title = "MM",
-                            items = List.map fst minuteSelector,
-                            width=45.0,
-                            verticalOptions = LayoutOptions.Center,
-                            selectedIndexChanged = (fun (i, item) -> dispatch (PickerItemChanged (intervalSelect, Minutes, item)))
-                        )
-                        View.Label(
-                            text = ":",
-                            verticalOptions = LayoutOptions.Center
-                        )
-                        View.Picker(
-                            title = "SS",
-                            items = List.map fst secondSelector,
-                            width=45.0,
-                            verticalOptions = LayoutOptions.Center,
-                            selectedIndexChanged = (fun (i, item) -> dispatch (PickerItemChanged (intervalSelect, Seconds, item)))
-                        )
-                    ]
-                 ).Row(0).Column(1)
-            ]                       
-        )
+                    selectedIndexChanged = (fun (i, item) -> dispatch (message (intervalSelect, Hours, i)))
+                )
+                View.Label(
+                    text = ":", 
+                    verticalOptions = LayoutOptions.Center
+                )
+                View.Picker(
+                    title = "MM",
+                    items = List.map fst minuteSelector,
+                    width=45.0,
+                    verticalOptions = LayoutOptions.Center,
+                    selectedIndexChanged = (fun (i, item) -> dispatch (message (intervalSelect, Minutes, i)))
+                )
+                View.Label(
+                    text = ":",
+                    verticalOptions = LayoutOptions.Center
+                )
+                View.Picker(
+                    title = "SS",
+                    items = List.map fst secondSelector,
+                    width=45.0,
+                    verticalOptions = LayoutOptions.Center,
+                    selectedIndexChanged = (fun (i, item) -> dispatch (message (intervalSelect, Seconds, i)))
+                )
+            ]
+         )
 
+    //!< creates a time selector inside of a rowEntryWithTitle
+    let durationSelector title dispatch message intervalSelect  =
+        let mainElement = timeSelector dispatch message intervalSelect
+        rowEntryWithTitle title mainElement    
 
+    //!< main UI view function
     let view model dispatch = 
         View.ContentPage(
             title = "Interval Timer Configuration",
             content = View.StackLayout(
-                [durationSelector "High Interval" HighInterval dispatch
-                 durationSelector "Low Interval" LowInterval dispatch
-                 durationSelector "Warmup Duration" WarmupInterval dispatch
-                 durationSelector "Cooldown Duration" CooldownInterval dispatch
+                [durationSelector "High Interval" dispatch DurationSelectorChanged HighInterval
+                 durationSelector "Low Interval" dispatch DurationSelectorChanged LowInterval
+                 durationSelector "Warmup Duration" dispatch DurationSelectorChanged WarmupInterval
+                 durationSelector "Cooldown Duration" dispatch DurationSelectorChanged CooldownInterval
+                 singleElementSelector "Reps" repSetSelector dispatch RepSelectorChanged
+                 singleElementSelector "Sets" repSetSelector dispatch SetSelectorChanged
+                 View.Button(
+                    text="Start",
+                    horizontalOptions = LayoutOptions.Center,
+                    width = 200.0,
+                    command = fun () -> dispatch ButtonClicked
+                    )
                 ]
             )
         )

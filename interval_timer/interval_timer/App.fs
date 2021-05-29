@@ -28,8 +28,8 @@ module App =
     let update message model =
         match message with
         | MainPageMessage message ->
-            let mainModel, command = MainPage.update message model.MainPageModel
-            { model with MainPageModel = mainModel }, Cmd.ofMsg (MainPageMessage command)
+            let mainModel = MainPage.update message model.MainPageModel
+            { model with MainPageModel = mainModel }, Cmd.none
 
 
     let getPages allPages =

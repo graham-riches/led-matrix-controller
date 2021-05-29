@@ -20,8 +20,8 @@
     <MonoAndroidAssetsPrefix>Assets</MonoAndroidAssetsPrefix>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <AndroidLinkMode>None</AndroidLinkMode>
-    <SelectedDevice>pixel_2_-_api_28</SelectedDevice>
-    <ActiveDebugProfile>pixel_2_-_api_28</ActiveDebugProfile>
+    <SelectedDevice>Google Pixel 4a (5G)</SelectedDevice>
+    <ActiveDebugProfile>Google Pixel 4a (5G)</ActiveDebugProfile>
     <DefaultDevice>pixel_2_-_api_28</DefaultDevice>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
