@@ -5,17 +5,22 @@
     <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
   </PropertyGroup>
 
-  <ItemGroup>
+  <ItemGroup>    
     <Compile Include="Timers.fs" />
-    <Compile Include="Json.fs" />
-    <Compile Include="DomainOutput.fs" />    
+    <Compile Include="DataBase.fs" />
     <Compile Include="Helpers.fs" />
-    <Compile Include="Components.fs" />    
+    <Compile Include="Components.fs" />
+    <Compile Include="Json.fs" />
+    <Compile Include="DomainOutput.fs" />
     <Compile Include="MainPage.fs" />
+    <Compile Include="DetailsPage.fs" />
+    <Compile Include="SettingsPage.fs" />           
+    <Compile Include="CreateTimerPage.fs" />    
     <Compile Include="App.fs" />
   </ItemGroup>
   
   <ItemGroup>
+    <PackageReference Include="sqlite-net-pcl" Version="1.7.335" />
     <PackageReference Include="Xamarin.Forms" Version="5.0.0.1874" />
     <PackageReference Include="Xamarin.Essentials" Version="1.5.3.2" />
     <PackageReference Include="Fabulous.XamarinForms" Version="1.1.0" />

@@ -20,33 +20,6 @@ module DomainOutput =
           cooldown_interval_ms: int
           repeat_times: int
         }
-
-    //!< hourToMinute :: Hours -> Minutes
-    let hourToMinute hour =
-        hour * 60
-
-    //!< minuteToSecond :: Minutes -> Seconds
-    let minuteToSecond minute = 
-        minute * 60
-
-    //!< secondToMillisecond :: Seconds -> Milliseconds
-    let secondToMillisecond second = 
-        second * 1000
-
-    //!< hourToMillisecond :: Hours -> Milliseconds
-    let hourToMillisecond hour = 
-        hourToMinute hour |> minuteToSecond |> secondToMillisecond        
-
-    //!< minuteToMilliseconds :: Minutes -> Milliseconds
-    let minuteToMillisecond minute =
-        minuteToSecond minute |> secondToMillisecond        
-
-    //!< durationToMilliseconds :: Duration -> Milliseconds
-    let durationToMilliseconds duration = 
-        let hourTime = hourToMillisecond duration.Hour
-        let minuteTime = minuteToMillisecond duration.Minute
-        let secondTime = secondToMillisecond duration.Second
-        hourTime + minuteTime + secondTime
         
     //!< timerToTimerOutput :: Timer -> TimerOutput
     let timerToTimerOutput timer = 
@@ -62,11 +35,15 @@ module DomainOutput =
     let timerToJson timer = 
         timerToTimerOutput timer
         |> Json.serialize
-
-    //!< TODO: get rid of hardcoded values here**
-    let sendTcp (message: string) = 
+        |> sprintf "%s\r\n"
+    
+    let sendTcp (ipAddress: string) (message: string)  = 
         let client = new TcpClient()
-        client.Connect ("10.0.0.201", 1234)
+        client.Connect (ipAddress, 1234)
         let stream = client.GetStream()
         let bytes = Encoding.UTF8.GetBytes message
         stream.Write(bytes, 0, bytes.Length)
+        stream.Close()
+        client.Close()
+        client.Dispose()
+

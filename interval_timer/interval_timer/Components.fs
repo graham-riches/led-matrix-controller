@@ -39,4 +39,14 @@ module Components =
                     )]
             )
         rowEntryWithTitle title mainElement
+
+    //!< Displays a pop-up alert
+    let popupAlert (title, message, cancel) = 
+        Application.Current.MainPage.DisplayAlert(title, message, cancel)
+        |> Async.AwaitTask
+
+    //!< popup alert with confirmation option
+    let popupConfirmation (title, message, accept, cancel) =
+        Application.Current.MainPage.DisplayAlert(title = title, message = message, accept = accept, cancel = cancel)
+        |> Async.AwaitTask
     
